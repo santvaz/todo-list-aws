@@ -42,12 +42,12 @@ pipeline {
                         sam validate --region %REGION%
 
                         sam deploy ^
+                        --config-env staging ^
                         --stack-name %STACK_NAME% ^
                         --region %REGION% ^
                         --capabilities CAPABILITY_IAM ^
                         --no-confirm-changeset ^
                         --no-fail-on-empty-changeset ^
-                        --resolve-s3 ^
                         --parameter-overrides Stage=staging
                         '''
                     }
