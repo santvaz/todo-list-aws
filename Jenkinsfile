@@ -63,19 +63,24 @@ pipeline {
         }
 
         stage('Promote') {
-            steps {
-                script {
-                    bat '''
-                    git checkout master || git checkout -b master
-                    git fetch origin
-                    git reset --hard origin/master
-                    git config user.email "stawfikvazquez@gmail.com"
-                    git config user.name "santvaz"
-                    git merge origin/develop --no-edit
-                    git push origin master
-                    '''
-                }
-            }
+    steps {
+        script {
+            bat '''
+            git merge --abort >nul 2>&1
+            
+            git config user.email "stawfikvazquez@gmail.com"
+            git config user.name "santvaz"
+
+            git fetch origin
+            git checkout master || git checkout -b master
+            git reset --hard origin/master
+
+            git merge origin/develop --no-edit -X theirs || (echo Error en merge && exit 1)
+
+            git push origin master
+            '''
         }
+    }
+}
     }
 }
