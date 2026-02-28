@@ -1,0 +1,68 @@
+pipeline {
+    agent none
+
+    environment {
+        DEPLOY_ENV = 'production'
+        REGION = 'us-east-1'
+        STACK_NAME = 'todo-list-production'
+    }
+
+    stages {
+        stage('Get Code') {
+            agent { label 'master' } // O 'built-in'
+            steps {
+                bat 'whoami & hostname'
+                git branch: 'master', url: 'https://github.com/santvaz/todo-list-aws.git'
+                stash name: 'code', includes: '**'
+            }
+        }
+
+        stage('Static Test') {
+            agent { label 'agente-estatico' } // AGENTE 1
+            steps {
+                bat 'whoami & hostname'
+                unstash 'code'
+                bat 'python -m pip install flake8 bandit'
+                bat 'python -m flake8 src --statistics'
+                bat 'python -m bandit -r src -f txt -o bandit-report.txt'
+            }
+        }
+
+        stage('Build & Deploy') {
+            agent { label 'master' }
+            steps {
+                bat 'whoami & hostname'
+                unstash 'code'
+                withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                    bat 'sam build'
+                    bat "sam deploy --stack-name %STACK_NAME% --region %REGION% --capabilities CAPABILITY_IAM --no-confirm-changeset --resolve-s3 --parameter-overrides Stage=%DEPLOY_ENV%"
+                    
+                    bat "aws cloudformation describe-stacks --stack-name %STACK_NAME% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
+                }
+                stash name: 'api_data', includes: 'api_url.txt'
+                cleanWs()
+            }
+        }
+
+        stage('Rest Test') {
+            agent { label 'agente-pruebas' } // AGENTE 2
+            steps {
+                bat 'whoami & hostname'
+                unstash 'api_data'
+                script {
+                    def apiUrl = readFile('api_url.txt').trim()
+                    echo "Ejecutando pruebas contra: ${apiUrl}"
+                    
+                    bat "curl -I -X GET ${apiUrl}"
+                    bat "curl -s -o /dev/null -w \"%%{http_code}\" ${apiUrl} | findstr \"200\""
+                }
+            }
+        }
+    }
+    
+    post {
+        always {
+            echo "Limpiando espacios de trabajo..."
+        }
+    }
+}
