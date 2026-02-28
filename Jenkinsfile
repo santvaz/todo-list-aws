@@ -6,6 +6,7 @@ pipeline {
         REGION = "us-east-1"
         PY_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
         PY_SCRIPTS = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311\\Scripts"
+        API_URL = "https://5hdiuxcilg.execute-api.us-east-1.amazonaws.com/Prod/todos"
     }
 
     stages {
@@ -36,11 +37,8 @@ pipeline {
                     ]) {
                         bat """
                         if exist .aws-sam rmdir /s /q .aws-sam
-                        
                         sam build
-                        
                         sam validate --region ${env.REGION}
-
                         sam deploy ^
                             --config-env staging ^
                             --stack-name ${env.STACK_NAME} ^
@@ -58,7 +56,8 @@ pipeline {
 
         stage('Rest Test') {
             steps {
-                bat 'curl -I https://google.com'
+                echo "Verificando endpoint de AWS: ${env.API_URL}"
+                bat "curl -s -o nul -w \"%%{http_code}\" ${env.API_URL} | findstr \"200\""
             }
         }
 
@@ -68,6 +67,7 @@ pipeline {
                     script {
                         bat """
                         @echo off
+                        git merge --abort >nul 2>&1
                         git config user.email "stawfikvazquez@gmail.com"
                         git config user.name "santvaz"
                         
@@ -77,8 +77,8 @@ pipeline {
                         
                         git merge origin/develop --no-edit -X theirs
                         
-                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/santvaz/todo-list-aws.git
-                        
+                        :: Autenticación automática para el push
+                        git remote set-url origin https://%GIT_USERNAME%:%GIT_PASSWORD%@github.com/santvaz/todo-list-aws.git
                         git push origin master
                         """
                     }
