@@ -14,8 +14,7 @@ pipeline {
                 checkout scm
                 
                 script {
-                    // if master -> production branch. else -> staging branch.
-                    def configBranch = (env.BRANCH_NAME == 'master') ? 'production' : 'staging'
+                    def configBranch = (env.BRANCH_NAME == 'master' || env.GIT_BRANCH?.contains('master')) ? 'production' : 'staging'
                     echo "Configuración detectada para: ${configBranch}"
                     
                     bat "git clone -b ${configBranch} https://github.com/santvaz/todo-list-aws-config.git temp_cfg"
