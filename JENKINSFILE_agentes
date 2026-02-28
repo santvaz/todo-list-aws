@@ -34,7 +34,7 @@ pipeline {
                 bat 'whoami & hostname'
                 unstash 'code'
                 withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-                    bat 'sam build --use-container'
+                    bat 'sam build'
                     bat "sam deploy --stack-name %STACK_NAME% --region %REGION% --capabilities CAPABILITY_IAM --no-confirm-changeset --resolve-s3 --parameter-overrides Stage=%DEPLOY_ENV%"
                     
                     bat "aws cloudformation describe-stacks --stack-name %STACK_NAME% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
