@@ -20,9 +20,6 @@ Parameters:
 Globals:
   Function:
     Timeout: 3
-    Policies:
-      - DynamoDBCrudPolicy:
-          TableName: !Ref TodosDynamoDbTable
     Environment:
       Variables:
         DYNAMODB_TABLE: !Ref TodosDynamoDbTable
