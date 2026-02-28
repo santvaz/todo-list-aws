@@ -36,19 +36,19 @@ pipeline {
                     ]) {
                         bat '''
                         if exist .aws-sam rmdir /s /q .aws-sam
-
+                                
                         sam build
-
+                                
                         sam validate --region %REGION%
 
                         sam deploy ^
-                        --config-env staging ^
-                        --stack-name %STACK_NAME% ^
-                        --region %REGION% ^
-                        --capabilities CAPABILITY_IAM ^
-                        --no-confirm-changeset ^
-                        --no-fail-on-empty-changeset ^
-                        --parameter-overrides Stage=staging
+                            --stack-name %STACK_NAME% ^
+                            --region %REGION% ^
+                            --capabilities CAPABILITY_IAM ^
+                            --no-confirm-changeset ^
+                            --no-fail-on-empty-changeset ^
+                            --resolve-s3 ^
+                            --parameter-overrides Stage=staging
                         '''
                     }
                 }
@@ -67,6 +67,8 @@ pipeline {
                     bat '''
                     git checkout master || git checkout -b master
                     git reset --hard origin/master
+                    git config user.email "stawfikvazquez@gmail.com"
+                    git config user.name "santvaz"
                     git merge origin/develop --no-edit
                     git push origin master
                     '''
