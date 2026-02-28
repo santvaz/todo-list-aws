@@ -35,19 +35,20 @@ pipeline {
                         string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                     ]) {
                         bat '''
+                        if exist .aws-sam rmdir /s /q .aws-sam
+
                         sam build
-                
-                        :: Añadimos la región explícitamente aquí
+
                         sam validate --region %REGION%
 
-                        :: Añadimos --resolve-s3 para que SAM cree el bucket automáticamente
                         sam deploy ^
+                            --config-env staging ^
                             --stack-name %STACK_NAME% ^
                             --region %REGION% ^
                             --capabilities CAPABILITY_IAM ^
                             --no-confirm-changeset ^
                             --no-fail-on-empty-changeset ^
-                            --resolve-s3
+                            --parameter-overrides Stage=staging
                         '''
                     }
                 }
