@@ -18,7 +18,7 @@ pipeline {
         stage('Static Test') {
             steps {
                 bat '''
-                pip install flake8 bandit
+                python -m pip install flake8 bandit
 
                 flake8 src --statistics --output-file flake8-report.txt
                 bandit -r src -f txt -o bandit-report.txt
@@ -31,7 +31,12 @@ pipeline {
                 bat '''
                 sam build
                 sam validate
-                sam deploy --stack-name %STACK_NAME% --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset
+
+                sam deploy ^
+                --stack-name %STACK_NAME% ^
+                --capabilities CAPABILITY_IAM ^
+                --no-confirm-changeset ^
+                --no-fail-on-empty-changeset
                 '''
             }
         }
@@ -40,8 +45,7 @@ pipeline {
             steps {
                 bat '''
                 echo Testing API
-
-                curl https://example.com
+                curl https://google.com
                 '''
             }
         }
