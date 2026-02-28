@@ -41,13 +41,13 @@ pipeline {
                                 
                         sam validate --region %REGION%
 
+                        @REM Se elimina --resolve-s3 porque ya existe un bucket configurado en samconfig.toml
                         sam deploy ^
                             --stack-name %STACK_NAME% ^
                             --region %REGION% ^
                             --capabilities CAPABILITY_IAM ^
                             --no-confirm-changeset ^
                             --no-fail-on-empty-changeset ^
-                            --resolve-s3 ^
                             --parameter-overrides Stage=staging
                         '''
                     }
@@ -66,6 +66,7 @@ pipeline {
                 script {
                     bat '''
                     git checkout master || git checkout -b master
+                    git fetch origin
                     git reset --hard origin/master
                     git config user.email "stawfikvazquez@gmail.com"
                     git config user.name "santvaz"
