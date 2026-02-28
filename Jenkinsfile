@@ -30,16 +30,26 @@ pipeline {
         stage('Deploy') {
             steps {
                 withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
-                    bat '''
-                    sam build
-                    sam validate
-                    sam deploy ^
-                        --stack-name %STACK_NAME% ^
-                        --region %REGION% ^
-                        --capabilities CAPABILITY_IAM ^
-                        --no-confirm-changeset ^
-                        --no-fail-on-empty-changeset
-                    '''
+                    withCredentials([
+                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        bat '''
+                        sam build
+                
+                        :: Añadimos la región explícitamente aquí
+                        sam validate --region %REGION%
+
+                        :: Añadimos --resolve-s3 para que SAM cree el bucket automáticamente
+                        sam deploy ^
+                            --stack-name %STACK_NAME% ^
+                            --region %REGION% ^
+                            --capabilities CAPABILITY_IAM ^
+                            --no-confirm-changeset ^
+                            --no-fail-on-empty-changeset ^
+                            --resolve-s3
+                        '''
+                    }
                 }
             }
         }
