@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         STACK_NAME = "todo-list-staging"
-        REGION = "eu-west-1"
+        REGION = "us-east-1"
         PY_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
         PY_SCRIPTS = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311\\Scripts"
     }
