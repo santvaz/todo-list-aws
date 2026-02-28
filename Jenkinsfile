@@ -31,17 +31,20 @@ pipeline {
             steps {
                 withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
                     withCredentials([
-                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
-                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AKID'),
+                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'SAK')
                     ]) {
                         bat '''
+                        set AWS_ACCESS_KEY_ID=%AKID%
+                        set AWS_SECRET_ACCESS_KEY=%SAK%
+                        set AWS_DEFAULT_REGION=%REGION%
+
                         if exist .aws-sam rmdir /s /q .aws-sam
                                 
                         sam build
                                 
                         sam validate --region %REGION%
 
-                        @REM Se elimina --resolve-s3 porque ya existe un bucket configurado en samconfig.toml
                         sam deploy ^
                             --stack-name %STACK_NAME% ^
                             --region %REGION% ^
