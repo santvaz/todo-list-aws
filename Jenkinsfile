@@ -63,24 +63,27 @@ pipeline {
         }
 
         stage('Promote') {
-    steps {
-        script {
-            bat '''
-            git merge --abort >nul 2>&1
-            
-            git config user.email "stawfikvazquez@gmail.com"
-            git config user.name "santvaz"
-
-            git fetch origin
-            git checkout master || git checkout -b master
-            git reset --hard origin/master
-
-            git merge origin/develop --no-edit -X theirs || (echo Error en merge && exit 1)
-
-            git push origin master
-            '''
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'github-token', passwordVariable: 'GIT_PASSWORD', usernameVariable: 'GIT_USERNAME')]) {
+                    script {
+                        bat """
+                        @echo off
+                        git config user.email "stawfikvazquez@gmail.com"
+                        git config user.name "santvaz"
+                        
+                        git checkout master || git checkout -b master
+                        git fetch origin
+                        git reset --hard origin/master
+                        
+                        git merge origin/develop --no-edit -X theirs
+                        
+                        git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/santvaz/todo-list-aws.git
+                        
+                        git push origin master
+                        """
+                    }
+                }
+            }
         }
-    }
-}
     }
 }
