@@ -44,13 +44,20 @@ pipeline {
                 bat 'whoami & hostname'
                 unstash 'code'
                 script {
-                    def currentEnv = (env.BRANCH_NAME == 'master' || env.GIT_BRANCH?.contains('master')) ? 'production' : 'staging'
+                    def branch = env.BRANCH_NAME
+                    def currentEnv = (branch == 'master') ? 'production' : 'staging'
                     def currentStack = (currentEnv == 'production') ? 'todo-list-production' : 'todo-list-staging'
-                    
+                    def configBranch = (branch == 'master') ? 'production' : 'staging'
+
+                    echo "Ejecutando en rama: ${branch}. Entorno AWS: ${currentEnv}. Config: ${configBranch}"
+
                     withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                        bat "git clone -b ${configBranch} https://github.com/santvaz/todo-list-aws-config.git temp_cfg"
+                        bat "move temp_cfg\\samconfig.toml ."
+                        bat "rd /s /q temp_cfg"
                         bat 'sam build'
                         bat "sam deploy --config-env ${currentEnv} --region us-east-1 --resolve-s3 --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset"
-                        bat "aws cloudformation describe-stacks --stack-name ${currentStack} --region %REGION% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
+                        bat "aws cloudformation describe-stacks --stack-name ${currentStack} --region us-east-1 --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
                     }
                 }
                 stash name: 'api_data', includes: 'api_url.txt'
