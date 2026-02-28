@@ -33,15 +33,13 @@ pipeline {
                         string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                     ]) {
                         bat """
-                        sam deploy ^
-                            --config-env production ^
-                            --stack-name ${env.STACK_NAME} ^
-                            --region ${env.REGION} ^
-                            --capabilities CAPABILITY_IAM ^
-                            --no-confirm-changeset ^
-                            --no-fail-on-empty-changeset ^
-                            --resolve-s3 ^
-                            --parameter-overrides Stage=production
+                        sam deploy --stack-name todo-list-production ^
+                                    --region us-east-1 ^
+                                    --capabilities CAPABILITY_IAM ^
+                                    --no-confirm-changeset ^
+                                    --no-fail-on-empty-changeset ^
+                                    --resolve-s3 ^
+                                    --parameter-overrides Stage=production
                         """
                     }
                 }
@@ -66,7 +64,11 @@ pipeline {
                         echo "URL de Producción: ${BASE_URL}"
                         
                         echo 'Iniciando Pruebas de lectura con Curl...'
+                        
                         bat "curl -I -X GET ${BASE_URL}/todos"
+                        
+                        echo 'Validando que el código de respuesta sea 200 OK...'
+                        bat "curl -s -o /dev/null -w \"%%{http_code}\" ${BASE_URL}/todos | findstr \"200\""
                     }
                 }
             }
