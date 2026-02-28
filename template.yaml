@@ -20,9 +20,6 @@ Parameters:
 Globals:
   Function:
     Timeout: 3
-    Policies:
-      - DynamoDBCrudPolicy:
-          TableName: !Ref TodosDynamoDbTable
     Environment:
       Variables:
         DYNAMODB_TABLE: !Ref TodosDynamoDbTable
@@ -36,6 +33,9 @@ Resources:
       CodeUri: src/
       Handler: create.create
       Runtime: python3.11
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodosDynamoDbTable
       Events:
         Create:
           Type: Api
@@ -48,6 +48,9 @@ Resources:
       CodeUri: src/
       Handler: list.list
       Runtime: python3.11
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodosDynamoDbTable
       Events:
         Create:
           Type: Api
@@ -60,6 +63,9 @@ Resources:
       CodeUri: src/
       Handler: get.get
       Runtime: python3.11
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodosDynamoDbTable
       Events:
         Create:
           Type: Api
@@ -72,6 +78,9 @@ Resources:
       CodeUri: src/
       Handler: update.update
       Runtime: python3.11
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodosDynamoDbTable
       Events:
         Create:
           Type: Api
@@ -84,6 +93,9 @@ Resources:
       CodeUri: src/
       Handler: delete.delete
       Runtime: python3.11
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref TodosDynamoDbTables
       Events:
         Create:
           Type: Api
