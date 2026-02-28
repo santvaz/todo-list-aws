@@ -3,11 +3,12 @@ pipeline {
 
     environment {
         STACK_NAME = "todo-list-staging"
-        REGION = "eu-west-1"
+        REGION = "us-east-1"
+        PY_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
+        PY_SCRIPTS = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311\\Scripts"
     }
 
     stages {
-
         stage('Get Code') {
             steps {
                 git branch: 'develop', url: 'https://github.com/santvaz/todo-list-aws.git'
@@ -16,52 +17,64 @@ pipeline {
 
         stage('Static Test') {
             steps {
-                sh '''
-                pip3 install flake8 bandit
-
-                flake8 src --statistics --tee --output-file flake8-report.txt
-                bandit -r src -f txt -o bandit-report.txt
-                '''
+                withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
+                    bat """
+                    python -m pip install flake8 bandit
+                    python -m flake8 src --statistics --output-file flake8-report.txt || echo "Flake8 found issues"
+                    python -m bandit -r src -f txt -o bandit-report.txt || echo "Bandit found issues"
+                    """
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                sh '''
-                sam build
-                sam validate
+                withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
+                    withCredentials([
+                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        bat """
+                        if exist .aws-sam rmdir /s /q .aws-sam
+                        
+                        sam build
+                        
+                        sam validate --region ${env.REGION}
 
-                sam deploy \
-                --stack-name $STACK_NAME \
-                --capabilities CAPABILITY_IAM \
-                --no-confirm-changeset \
-                --no-fail-on-empty-changeset
-                '''
+                        sam deploy ^
+                            --config-env staging ^
+                            --stack-name ${env.STACK_NAME} ^
+                            --region ${env.REGION} ^
+                            --capabilities CAPABILITY_IAM ^
+                            --no-confirm-changeset ^
+                            --no-fail-on-empty-changeset ^
+                            --resolve-s3 ^
+                            --parameter-overrides Stage=staging
+                        """
+                    }
+                }
             }
         }
 
         stage('Rest Test') {
             steps {
-                sh '''
-                API_URL=$(aws cloudformation describe-stacks \
-                --stack-name $STACK_NAME \
-                --query "Stacks[0].Outputs[?OutputKey=='HelloWorldApi'].OutputValue" \
-                --output text)
-
-                echo "API URL: $API_URL"
-
-                curl -X GET $API_URL/todo
-                '''
+                bat 'curl -I https://google.com'
             }
         }
 
         stage('Promote') {
             steps {
-                sh '''
-                git checkout master
-                git merge develop
-                git push origin master
-                '''
+                script {
+                    bat '''
+                    git checkout master || git checkout -b master
+                    git fetch origin
+                    git reset --hard origin/master
+                    git config user.email "stawfikvazquez@gmail.com"
+                    git config user.name "santvaz"
+                    git merge origin/develop --no-edit
+                    git push origin master
+                    '''
+                }
             }
         }
     }

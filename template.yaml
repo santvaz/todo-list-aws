@@ -31,9 +31,8 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: src/
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Handler: create.create
-      Runtime: python3.10
+      Runtime: python3.11
       Events:
         Create:
           Type: Api
@@ -44,9 +43,8 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: src/
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Handler: list.list
-      Runtime: python3.10
+      Runtime: python3.11
       Events:
         Create:
           Type: Api
@@ -57,9 +55,8 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: src/
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Handler: get.get
-      Runtime: python3.10
+      Runtime: python3.11
       Events:
         Create:
           Type: Api
@@ -70,9 +67,8 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: src/
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Handler: update.update
-      Runtime: python3.10
+      Runtime: python3.11
       Events:
         Create:
           Type: Api
@@ -83,9 +79,8 @@ Resources:
     Type: AWS::Serverless::Function 
     Properties:
       CodeUri: src/
-      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Handler: delete.delete
-      Runtime: python3.10
+      Runtime: python3.11
       Events:
         Create:
           Type: Api
