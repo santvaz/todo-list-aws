@@ -11,10 +11,21 @@ pipeline {
         stage('Get Code') {
             agent { label 'built-in' }
             steps {
-                bat 'whoami & hostname'
-                git branch: 'master', url: 'https://github.com/santvaz/todo-list-aws.git'
+                checkout scm
+                
+                script {
+                    // if master -> production branch. else -> staging branch.
+                    def configBranch = (env.BRANCH_NAME == 'master') ? 'production' : 'staging'
+                    echo "Configuración detectada para: ${configBranch}"
+                    
+                    bat "git clone -b ${configBranch} https://github.com/santvaz/todo-list-aws-config.git temp_cfg"
+                    
+                    bat "move temp_cfg\\samconfig.toml ."
+                    
+                    bat "rd /s /q temp_cfg"
+                }
                 stash name: 'code', includes: '**'
-            }
+            }    
         }
 
         stage('Static Test') {
@@ -35,8 +46,8 @@ pipeline {
                 unstash 'code'
                 withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                     bat 'sam build'
-                    bat "sam deploy --stack-name %STACK_NAME% --region %REGION% --capabilities CAPABILITY_IAM --no-confirm-changeset --resolve-s3 --no-fail-on-empty-changeset --parameter-overrides Stage=%DEPLOY_ENV%"
-
+                    bat "sam deploy --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset"
+                    
                     bat "aws cloudformation describe-stacks --stack-name %STACK_NAME% --region %REGION% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
                 }
                 stash name: 'api_data', includes: 'api_url.txt'
