@@ -9,7 +9,7 @@ pipeline {
 
     stages {
         stage('Get Code') {
-            agent { label 'master' } // O 'built-in'
+            agent { label 'built-in' }
             steps {
                 bat 'whoami & hostname'
                 git branch: 'master', url: 'https://github.com/santvaz/todo-list-aws.git'
