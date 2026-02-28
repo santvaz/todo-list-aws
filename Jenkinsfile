@@ -4,7 +4,7 @@ pipeline {
     environment {
         STACK_NAME = "todo-list-staging"
         REGION = "eu-west-1"
-        PYTHON_EXE = "py" 
+        PYTHON_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
     }
 
     stages {
@@ -16,35 +16,36 @@ pipeline {
 
         stage('Static Test') {
             steps {
-                bat """
-                ${PYTHON_EXE} -m pip install flake8 bandit
-                ${PYTHON_EXE} -m flake8 src --statistics --output-file flake8-report.txt || echo "Flake8 found issues"
-                ${PYTHON_EXE} -m bandit -r src -f txt -o bandit-report.txt || echo "Bandit found issues"
-                """
+                withEnv(["PATH+PYTHON=${env.PYTHON_HOME};${env.PYTHON_HOME}\\Scripts"]) {
+                    bat """
+                    python -m pip install flake8 bandit
+                    python -m flake8 src --statistics --output-file flake8-report.txt || echo "Issues found"
+                    python -m bandit -r src -f txt -o bandit-report.txt || echo "Security issues found"
+                    """
+                }
             }
         }
 
         stage('Deploy') {
             steps {
-                bat '''
-                sam build --use-container
-                sam validate
-                sam deploy ^
-                    --stack-name %STACK_NAME% ^
-                    --region %REGION% ^
-                    --capabilities CAPABILITY_IAM ^
-                    --no-confirm-changeset ^
-                    --no-fail-on-empty-changeset
-                '''
+                withEnv(["PATH+PYTHON=${env.PYTHON_HOME};${env.PYTHON_HOME}\\Scripts"]) {
+                    bat '''
+                    sam build
+                    sam validate
+                    sam deploy ^
+                        --stack-name %STACK_NAME% ^
+                        --region %REGION% ^
+                        --capabilities CAPABILITY_IAM ^
+                        --no-confirm-changeset ^
+                        --no-fail-on-empty-changeset
+                    '''
+                }
             }
         }
 
         stage('Rest Test') {
             steps {
-                bat '''
-                echo Testing API
-                curl -I https://google.com
-                '''
+                bat 'curl -I https://google.com'
             }
         }
 
