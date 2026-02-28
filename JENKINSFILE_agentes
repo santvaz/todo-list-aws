@@ -43,11 +43,15 @@ pipeline {
             steps {
                 bat 'whoami & hostname'
                 unstash 'code'
-                withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
-                    bat 'sam build'
-                    bat "sam deploy --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset"
+                script {
+                    def currentEnv = (env.BRANCH_NAME == 'master' || env.GIT_BRANCH?.contains('master')) ? 'production' : 'staging'
+                    def currentStack = (currentEnv == 'production') ? 'todo-list-production' : 'todo-list-staging'
                     
-                    bat "aws cloudformation describe-stacks --stack-name %STACK_NAME% --region %REGION% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
+                    withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
+                        bat 'sam build'
+                        bat "sam deploy --config-env ${currentEnv} --no-confirm-changeset --no-fail-on-empty-changeset"
+                        bat "aws cloudformation describe-stacks --stack-name ${currentStack} --region %REGION% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
+                    }
                 }
                 stash name: 'api_data', includes: 'api_url.txt'
                 cleanWs()
