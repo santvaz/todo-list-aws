@@ -49,7 +49,7 @@ pipeline {
                     
                     withCredentials([usernamePassword(credentialsId: 'aws-credentials', passwordVariable: 'AWS_SECRET_ACCESS_KEY', usernameVariable: 'AWS_ACCESS_KEY_ID')]) {
                         bat 'sam build'
-                        bat "sam deploy --config-env ${currentEnv} --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset"
+                        bat "sam deploy --config-env ${currentEnv} --region %REGION% --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset"
                         bat "aws cloudformation describe-stacks --stack-name ${currentStack} --region %REGION% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
                     }
                 }
