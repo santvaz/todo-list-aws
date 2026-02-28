@@ -95,7 +95,7 @@ Resources:
       Runtime: python3.11
       Policies:
         - DynamoDBCrudPolicy:
-            TableName: !Ref TodosDynamoDbTables
+            TableName: !Ref TodosDynamoDbTable
       Events:
         Create:
           Type: Api
