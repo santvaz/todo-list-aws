@@ -56,8 +56,12 @@ pipeline {
 
         stage('Rest Test') {
             steps {
-                echo "Verificando endpoint de AWS: ${env.API_URL}"
-                bat "curl -s -o nul -w \"%%{http_code}\" ${env.API_URL} | findstr \"200\""
+                script {
+                    def response = bat(script: "curl -s -o nul -w \"%%{http_code}\" ${env.API_URL}", returnStdout: true).trim()
+                    echo "La API respondió con código: ${response}"
+                    
+                    bat "curl -s -o nul -w \"%%{http_code}\" ${env.API_URL}"
+                }
             }
         }
 
