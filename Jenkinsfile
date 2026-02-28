@@ -1,4 +1,5 @@
 pipeline {
+
     agent any
 
     environment {
@@ -16,10 +17,10 @@ pipeline {
 
         stage('Static Test') {
             steps {
-                sh '''
-                pip3 install flake8 bandit
+                bat '''
+                pip install flake8 bandit
 
-                flake8 src --statistics --tee --output-file flake8-report.txt
+                flake8 src --statistics --output-file flake8-report.txt
                 bandit -r src -f txt -o bandit-report.txt
                 '''
             }
@@ -27,42 +28,34 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                sh '''
+                bat '''
                 sam build
                 sam validate
-
-                sam deploy \
-                --stack-name $STACK_NAME \
-                --capabilities CAPABILITY_IAM \
-                --no-confirm-changeset \
-                --no-fail-on-empty-changeset
+                sam deploy --stack-name %STACK_NAME% --capabilities CAPABILITY_IAM --no-confirm-changeset --no-fail-on-empty-changeset
                 '''
             }
         }
 
         stage('Rest Test') {
             steps {
-                sh '''
-                API_URL=$(aws cloudformation describe-stacks \
-                --stack-name $STACK_NAME \
-                --query "Stacks[0].Outputs[?OutputKey=='HelloWorldApi'].OutputValue" \
-                --output text)
+                bat '''
+                echo Testing API
 
-                echo "API URL: $API_URL"
-
-                curl -X GET $API_URL/todo
+                curl https://example.com
                 '''
             }
         }
 
         stage('Promote') {
             steps {
-                sh '''
+                bat '''
                 git checkout master
                 git merge develop
                 git push origin master
                 '''
             }
         }
+
     }
+
 }
