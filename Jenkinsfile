@@ -31,28 +31,28 @@ pipeline {
             steps {
                 withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
                     withCredentials([
-                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AKID'),
-                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'SAK')
+                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                     ]) {
-                        bat '''
-                        set AWS_ACCESS_KEY_ID=%AKID%
-                        set AWS_SECRET_ACCESS_KEY=%SAK%
-                        set AWS_DEFAULT_REGION=%REGION%
-
+                        bat """
+                        @echo off
                         if exist .aws-sam rmdir /s /q .aws-sam
-                                
+                        
                         sam build
-                                
-                        sam validate --region %REGION%
+                        
+                        sam validate --region ${env.REGION}
 
+                        @REM Ejecutamos el deploy inyectando la región explícitamente en el entorno
+                        set AWS_DEFAULT_REGION=${env.REGION}
+                        
                         sam deploy ^
-                            --stack-name %STACK_NAME% ^
-                            --region %REGION% ^
+                            --stack-name ${env.STACK_NAME} ^
+                            --region ${env.REGION} ^
                             --capabilities CAPABILITY_IAM ^
                             --no-confirm-changeset ^
                             --no-fail-on-empty-changeset ^
                             --parameter-overrides Stage=staging
-                        '''
+                        """
                     }
                 }
             }
