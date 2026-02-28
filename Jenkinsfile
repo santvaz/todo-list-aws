@@ -4,7 +4,8 @@ pipeline {
     environment {
         STACK_NAME = "todo-list-staging"
         REGION = "eu-west-1"
-        PYTHON_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
+        PY_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
+        PY_SCRIPTS = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311\\Scripts"
     }
 
     stages {
@@ -16,11 +17,11 @@ pipeline {
 
         stage('Static Test') {
             steps {
-                withEnv(["PATH+PYTHON=${env.PYTHON_HOME};${env.PYTHON_HOME}\\Scripts"]) {
+                withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
                     bat """
                     python -m pip install flake8 bandit
-                    python -m flake8 src --statistics --output-file flake8-report.txt || echo "Issues found"
-                    python -m bandit -r src -f txt -o bandit-report.txt || echo "Security issues found"
+                    python -m flake8 src --statistics --output-file flake8-report.txt || echo "Flake8 found issues"
+                    python -m bandit -r src -f txt -o bandit-report.txt || echo "Bandit found issues"
                     """
                 }
             }
@@ -28,7 +29,7 @@ pipeline {
 
         stage('Deploy') {
             steps {
-                withEnv(["PATH+PYTHON=${env.PYTHON_HOME};${env.PYTHON_HOME}\\Scripts"]) {
+                withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
                     bat '''
                     sam build
                     sam validate
