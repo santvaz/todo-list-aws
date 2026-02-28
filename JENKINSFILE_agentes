@@ -37,7 +37,7 @@ pipeline {
                     bat 'sam build'
                     bat "sam deploy --stack-name %STACK_NAME% --region %REGION% --capabilities CAPABILITY_IAM --no-confirm-changeset --resolve-s3 --no-fail-on-empty-changeset --parameter-overrides Stage=%DEPLOY_ENV%"
 
-                    bat "aws cloudformation describe-stacks --stack-name %STACK_NAME% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
+                    bat "aws cloudformation describe-stacks --stack-name %STACK_NAME% --region %REGION% --query \"Stacks[0].Outputs[?OutputKey=='ListTodosApi'].OutputValue\" --output text > api_url.txt"
                 }
                 stash name: 'api_data', includes: 'api_url.txt'
                 cleanWs()
