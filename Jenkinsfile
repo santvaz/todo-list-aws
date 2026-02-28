@@ -35,22 +35,20 @@ pipeline {
                         string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
                     ]) {
                         bat """
-                        @echo off
                         if exist .aws-sam rmdir /s /q .aws-sam
                         
                         sam build
                         
                         sam validate --region ${env.REGION}
 
-                        @REM Ejecutamos el deploy inyectando la región explícitamente en el entorno
-                        set AWS_DEFAULT_REGION=${env.REGION}
-                        
                         sam deploy ^
+                            --config-env staging ^
                             --stack-name ${env.STACK_NAME} ^
                             --region ${env.REGION} ^
                             --capabilities CAPABILITY_IAM ^
                             --no-confirm-changeset ^
                             --no-fail-on-empty-changeset ^
+                            --resolve-s3 ^
                             --parameter-overrides Stage=staging
                         """
                     }
