@@ -1,41 +1,82 @@
 pipeline {
     agent any
+    
+    environment {
+        STACK_NAME = "todo-list-production"
+        REGION = "us-east-1"
+        PY_HOME = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311"
+        PY_SCRIPTS = "C:\\Users\\Ghost\\AppData\\Local\\Programs\\Python\\Python311\\Scripts"
+    }
+
     stages {
-        
-        stage('SetUp'){
-            steps{
-                echo 'Setup Virtualenv for testing'
-                sh "bash pipelines/PIPELINE-FULL-PRODUCTION/setup.sh"
+        stage('Get Code') {
+            steps {
+                git branch: 'master', url: 'https://github.com/santvaz/todo-list-aws.git'
             }
         }
-       stage('Build') {
-            steps{
-                echo 'Package sam application:'
-                sh "bash pipelines/common-steps/build.sh"
+
+        stage('Build') {
+            steps {
+                echo 'Iniciando SAM Build...'
+                withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
+                    bat "sam build"
+                }
             }
         }
-        stage('Deploy'){
-            steps{
-                echo 'Initiating Deployment'
-                sh "bash pipelines/common-steps/deploy.sh"
+
+        stage('Deploy') {
+            steps {
+                echo 'Desplegando en entorno PRODUCTION...'
+                withEnv(["PATH+EXTRA=${env.PY_HOME};${env.PY_SCRIPTS}"]) {
+                    withCredentials([
+                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        bat """
+                        sam deploy ^
+                            --config-env production ^
+                            --stack-name ${env.STACK_NAME} ^
+                            --region ${env.REGION} ^
+                            --capabilities CAPABILITY_IAM ^
+                            --no-confirm-changeset ^
+                            --no-fail-on-empty-changeset ^
+                            --resolve-s3 ^
+                            --parameter-overrides Stage=production
+                        """
+                    }
+                }
             }
         }
-        stage('Integration Test after deploy'){
-            steps{
+
+        stage('Rest Test (Read Only)') {
+            steps {
                 script {
-                    def BASE_URL = sh( script: "aws cloudformation describe-stacks --stack-name todo-list-aws-production --query 'Stacks[0].Outputs[?OutputKey==`BaseUrlApi`].OutputValue' --region us-east-1 --output text",
-                        returnStdout: true)
-                    echo "$BASE_URL"
-                    echo 'Initiating Integration Tests'
-                    sh "bash pipelines/common-steps/integration.sh $BASE_URL"
+                    withCredentials([
+                        string(credentialsId: 'AWS_ACCESS_KEY_ID', variable: 'AWS_ACCESS_KEY_ID'),
+                        string(credentialsId: 'AWS_SECRET_ACCESS_KEY', variable: 'AWS_SECRET_ACCESS_KEY')
+                    ]) {
+                        def BASE_URL = bat(
+                            script: "aws cloudformation describe-stacks --stack-name ${env.STACK_NAME} --query \"Stacks[0].Outputs[?OutputKey=='BaseUrlApi'].OutputValue\" --region ${env.REGION} --output text",
+                            returnStdout: true
+                        ).trim()
+                        
+                        echo "URL de Producción detectada: ${BASE_URL}"
+                        
+                        echo 'Iniciando Pruebas de lectura con Curl...'
+                        bat "curl -I -X GET ${BASE_URL}/todos"
+                    }
                 }
             }
         }
     }
+
     post { 
         always { 
-            echo 'Clean env: delete dir'
+            echo 'Limpiando espacio de trabajo...'
             cleanWs()
+        }
+        success {
+            echo '¡RETOCADO! Despliegue en Producción finalizado correctamente.'
         }
     }
 }
