@@ -29,7 +29,7 @@ pipeline {
         }
 
         stage('Build & Deploy') {
-            agent { label 'master' }
+            agent { label 'built-in' }
             steps {
                 bat 'whoami & hostname'
                 unstash 'code'
